@@ -44,6 +44,7 @@
     printDialog: $("#printDialog"),
     confirmPrintButton: $("#confirmPrintButton"),
     toast: $("#toast"),
+    celebration: $("#celebration"),
   };
 
   const state = {
@@ -56,6 +57,8 @@
     history: [],
     saveTimer: null,
     toastTimer: null,
+    celebrationTimer: null,
+    hasCelebrated: false,
     db: null,
   };
 
@@ -64,6 +67,22 @@
     els.toast.classList.add("visible");
     window.clearTimeout(state.toastTimer);
     state.toastTimer = window.setTimeout(() => els.toast.classList.remove("visible"), 2900);
+  }
+
+  function hideCelebration() {
+    window.clearTimeout(state.celebrationTimer);
+    state.celebrationTimer = null;
+    els.celebration.classList.remove("is-visible");
+    els.celebration.setAttribute("aria-hidden", "true");
+  }
+
+  function showCelebration() {
+    window.clearTimeout(state.celebrationTimer);
+    els.celebration.setAttribute("aria-hidden", "false");
+    els.celebration.classList.remove("is-visible");
+    void els.celebration.offsetWidth;
+    els.celebration.classList.add("is-visible");
+    state.celebrationTimer = window.setTimeout(hideCelebration, 3200);
   }
 
   function openDatabase() {
@@ -415,16 +434,22 @@
     const position = state.playerPath[state.playerPath.length - 1] ?? state.maze.start;
     els.moveCount.textContent = String(moves);
     if (position === state.maze.end) {
+      if (!state.hasCelebrated) {
+        state.hasCelebrated = true;
+        showCelebration();
+      }
       els.progressLabel.textContent = "ゴール！";
-      els.gameMessage.textContent = `クリア！ ${moves}歩でゴールしました。`;
+      els.gameMessage.textContent = `おめでとう！ ${moves}歩でゴールしました。`;
       els.gameMessage.style.color = "#2f68a8";
       els.solutionStatus.textContent = "クリアおめでとう！正解ルートも確認できます。";
     } else if (moves === 0) {
+      state.hasCelebrated = false;
       els.progressLabel.textContent = "スタートから進もう";
       els.gameMessage.textContent = "左上のスタートから右下のゴールを目指そう。";
       els.gameMessage.style.color = "";
       els.solutionStatus.textContent = "正解ルートと進む順番を確認できます。";
     } else {
+      state.hasCelebrated = false;
       els.progressLabel.textContent = `マス ${position + 1} にいるよ`;
       els.gameMessage.textContent = "行き止まりに気をつけて進もう。";
       els.gameMessage.style.color = "";
@@ -513,6 +538,8 @@
     state.maze = createDiggingMaze(size);
     state.solution = solveMaze(state.maze);
     state.playerPath = [state.maze.start];
+    state.hasCelebrated = false;
+    hideCelebration();
     state.revealSolution = false;
     state.historyId = makeId();
     state.createdAt = Date.now();
@@ -554,6 +581,8 @@
   function resetPlayer() {
     if (!state.maze) return;
     state.playerPath = [state.maze.start];
+    state.hasCelebrated = false;
+    hideCelebration();
     updateProgress();
     queuePersist();
   }
@@ -659,6 +688,8 @@
       state.playerPath = !endpointsChanged && Array.isArray(record.playerPath) && record.playerPath.length
         ? record.playerPath
         : [state.maze.start];
+      state.hasCelebrated = state.playerPath[state.playerPath.length - 1] === state.maze.end;
+      hideCelebration();
       state.solution = solveMaze(state.maze);
       state.historyId = record.id;
       state.createdAt = record.createdAt;
@@ -685,6 +716,8 @@
         state.maze = null;
         state.solution = [];
         state.playerPath = [];
+        state.hasCelebrated = false;
+        hideCelebration();
         state.revealSolution = false;
         renderStage();
       }
