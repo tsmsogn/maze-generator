@@ -534,8 +534,6 @@
     const row = currentRow + direction.dr;
     const col = currentCol + direction.dc;
     if (row < 0 || row >= state.maze.size || col < 0 || col >= state.maze.size) {
-      els.gameMessage.textContent = "迷路の外へは進めません。";
-      els.gameMessage.style.color = "#b16d54";
       return;
     }
     if (state.maze.cells[current].walls[direction.name]) {
