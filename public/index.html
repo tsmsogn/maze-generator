@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>迷路ジェネレーター｜自由なサイズで生成・印刷</title>
+    <meta name="description" content="好きなマス数で迷路を自動生成。正解ルートの確認と印刷もできる迷路ジェネレーターです。" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#workspace" aria-label="迷路ジェネレーター">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span class="brand-name">迷路ジェネレーター</span>
+        </a>
+        <div class="topbar-right">
+          <span class="local-badge"><span class="status-dot"></span>この端末に保存</span>
+          <span class="topbar-note">YOUR CHOICE, YOUR MAZE.</span>
+        </div>
+      </header>
+
+      <main id="workspace" class="workspace">
+        <aside class="sidebar" aria-label="迷路の設定と履歴">
+          <section class="panel custom-maze-panel" aria-labelledby="customMazeTitle">
+            <div class="panel-heading">
+              <span class="step-index">01</span>
+              <div><h1 id="customMazeTitle">迷路の設定</h1><p>迷路の大きさを指定</p></div>
+            </div>
+            <label class="grid-size-control" for="customGridSize">
+              <span>マス数（縦 × 横）</span>
+              <span class="grid-size-input-row"><input id="customGridSize" type="number" min="5" max="101" step="1" value="15" inputmode="numeric" /><span>× 同じ数</span></span>
+            </label>
+            <p class="grid-size-note">5 × 5 から 101 × 101 まで指定できます。</p>
+            <p class="grid-size-note">穴掘り法で生成します。スタートは左上、ゴールは右下です。</p>
+            <button id="generateDigButton" class="primary-button" type="button"><span>迷路をつくる</span><span aria-hidden="true">↗</span></button>
+            <p class="privacy-note"><span aria-hidden="true">✳</span> 迷路と進行状況はこの端末に保存されます</p>
+          </section>
+
+          <section class="panel history-panel">
+            <div class="history-heading">
+              <div class="panel-heading compact-heading">
+                <span class="step-index">02</span><div><h2>最近の迷路</h2><p>このブラウザに保存</p></div>
+              </div>
+              <span id="historyCount" class="history-count">0</span>
+            </div>
+            <div id="historyList" class="history-list">
+              <div class="history-empty"><span aria-hidden="true">▧</span><p>つくった迷路が<br />ここに並びます</p></div>
+            </div>
+          </section>
+          <p class="sidebar-footnote">作成した迷路はブラウザの保存領域に保管されます。</p>
+        </aside>
+
+        <section class="main-stage" aria-label="迷路">
+          <div class="stage-topline">
+            <div class="stage-title-group">
+              <span id="stageEyebrow" class="stage-eyebrow">YOUR NEXT MAZE</span>
+              <h2 id="stageTitle">マス数を決めて迷路をつくろう。</h2>
+            </div>
+            <div id="stageActions" class="stage-actions" hidden>
+              <button id="printButton" class="secondary-button" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 8V4h10v4M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M7 14h10v6H7z" /></svg> 印刷する</button>
+              <button id="newMazeButton" class="icon-button" type="button" aria-label="新しい迷路をつくる" title="新しい迷路">＋</button>
+            </div>
+          </div>
+
+          <div id="emptyState" class="empty-state custom-empty-state" hidden>
+            <div class="custom-empty-art" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+            <p class="empty-kicker">READY FOR A NEW MAZE</p>
+            <h3>マス数を決めて<br />迷路を掘ろう。</h3>
+            <p class="empty-copy">マス数を指定してください。<br />スタートは左上、ゴールは右下です。</p>
+            <button id="emptyDigButton" class="primary-button empty-action-button" type="button"><span>迷路をつくる</span><span aria-hidden="true">↗</span></button>
+          </div>
+
+          <div id="puzzleView" class="puzzle-view" hidden>
+            <div class="puzzle-toolbar">
+              <div class="puzzle-labels">
+                <span id="mazeDimensions" class="maze-dimensions">15 × 15</span>
+                <span class="marker-legend"><b>S</b> START <b>G</b> GOAL</span>
+              </div>
+              <div class="puzzle-stats"><span id="moveCount">0</span><span>歩</span><span class="stat-divider">·</span><span id="progressLabel">スタートから進もう</span></div>
+            </div>
+            <div class="board-wrap">
+              <div class="board-frame">
+                <canvas id="mazeCanvas" width="900" height="900" aria-label="正方形の迷路。左上のスタートから右下のゴールを目指します。矢印キーまたは画面上の方向ボタンで移動できます。" tabindex="0"></canvas>
+              </div>
+            </div>
+            <div class="play-controls">
+              <div class="control-hint"><span class="keycap">↑</span><span class="keycap">←</span><span class="keycap">↓</span><span class="keycap">→</span><span>キーでも移動できます</span></div>
+              <div class="dpad" aria-label="移動ボタン">
+                <button class="dpad-button dpad-up" type="button" data-move="up" aria-label="上へ">↑</button>
+                <button class="dpad-button dpad-left" type="button" data-move="left" aria-label="左へ">←</button>
+                <button class="dpad-button dpad-down" type="button" data-move="down" aria-label="下へ">↓</button>
+                <button class="dpad-button dpad-right" type="button" data-move="right" aria-label="右へ">→</button>
+              </div>
+              <button id="resetButton" class="text-button reset-button" type="button"><span aria-hidden="true">↺</span> 最初から</button>
+            </div>
+            <div class="solution-panel">
+              <div class="solution-info">
+                <span class="solution-icon" aria-hidden="true">✳</span>
+                <div><h3>答え合わせ</h3><p id="solutionStatus">正解ルートと進む順番を確認できます。</p></div>
+              </div>
+              <button id="solutionButton" class="solution-button" type="button" aria-expanded="false"><span>答えを見る</span><span class="button-chevron" aria-hidden="true">⌄</span></button>
+              <div id="solutionDetails" class="solution-details" hidden>
+                <div class="solution-route-heading"><span class="route-line-swatch"></span><span>赤い線が正解ルートです</span><span id="solutionLength" class="route-length"></span></div>
+                <div id="directionSequence" class="direction-sequence" aria-label="正解ルートの進む順番"></div>
+              </div>
+            </div>
+            <p id="gameMessage" class="live-message" aria-live="polite"></p>
+          </div>
+          <footer class="stage-footer"><span>MADE FOR YOUR IMAGINATION</span><span>迷路ジェネレーター</span></footer>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div id="printOutput" class="print-output" aria-hidden="true">
+      <article class="print-sheet print-question-sheet">
+        <div class="print-header"><div class="print-brand">迷路ジェネレーター</div><div class="print-date"></div></div>
+        <div class="print-title-row"><div><p class="print-kicker">MAZE / PUZZLE</p><h1 class="print-name"></h1></div><div class="print-size"></div></div>
+        <p class="print-instructions">左上のSTARTから右下のGOALまで進もう。</p>
+        <canvas class="print-canvas-question" width="1200" height="1200"></canvas>
+        <div class="print-footer"><span>START → GOAL</span><span>迷路ジェネレーター</span></div>
+      </article>
+      <article class="print-sheet print-answer-sheet">
+        <div class="print-header"><div class="print-brand">迷路ジェネレーター</div><div class="print-date"></div></div>
+        <div class="print-title-row"><div><p class="print-kicker">MAZE / ANSWER</p><h1 class="print-name"></h1></div><div class="print-size"></div></div>
+        <p class="print-instructions">赤いルートをたどって、進む順番を確認しよう。</p>
+        <canvas class="print-canvas-answer" width="1200" height="1200"></canvas>
+        <div class="print-route-label">進む順番 <span class="print-route-length"></span></div>
+        <div class="print-directions"></div>
+        <div class="print-footer"><span>ANSWER KEY</span><span>迷路ジェネレーター</span></div>
+      </article>
+    </div>
+    <dialog id="printDialog" class="print-dialog">
+      <form method="dialog" class="print-dialog-card">
+        <div class="dialog-heading"><span class="step-index">PRINT</span><button class="dialog-close" value="cancel" aria-label="閉じる">×</button></div>
+        <h2>どの形式で印刷しますか？</h2>
+        <p>迷路をA4用紙に合わせて印刷します。解答には正解ルートが表示されます。</p>
+        <label class="print-choice"><input type="radio" name="printMode" value="question" checked /><span><strong>問題のみ</strong><small>答えを見ずに挑戦</small></span></label>
+        <label class="print-choice"><input type="radio" name="printMode" value="answer" /><span><strong>解答付き</strong><small>問題と答えを別ページに印刷</small></span></label>
+        <label class="print-choice"><input type="radio" name="printMode" value="answer-only" /><span><strong>答えのみ</strong><small>正解ルートと進む順番を印刷</small></span></label>
+        <div class="dialog-actions"><button class="secondary-button" value="cancel">キャンセル</button><button id="confirmPrintButton" class="primary-button" type="button"><span>印刷プレビューへ</span><span aria-hidden="true">↗</span></button></div>
+      </form>
+    </dialog>
+  </body>
+</html>

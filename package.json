@@ -1,0 +1,13 @@
+{
+  "name": "maze-generator",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "scripts": {
+    "build:css": "tailwindcss -i src/styles.css -o public/styles.css --minify",
+    "watch:css": "tailwindcss -i src/styles.css -o public/styles.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.0",
+    "tailwindcss": "^4.3.0"
+  }
+}
